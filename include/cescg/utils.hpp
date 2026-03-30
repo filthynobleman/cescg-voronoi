@@ -17,6 +17,8 @@
 // Basic inclusions always useful
 #include <vector>
 #include <string>
+#include <exception>
+#include <stdexcept>
 #define _USE_MATH_DEFINES
 #include <math.h>
 
