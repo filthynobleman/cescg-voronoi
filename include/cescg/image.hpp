@@ -31,6 +31,7 @@ private:
 
 public:
     // Loads an image from file.
+    // Only supports images with 1 channel (grayscale) or 3 channels (RGB).
     Image(const std::string& Filename);
 
     // Create an empty (black) image with given size and number of channels.
@@ -84,5 +85,8 @@ public:
     // Directories are created, if needed. Pixels values are clamped to sane ranges.
     bool Export(const std::string& Filename) const;
 };
+
+glm::vec3 YUV2RGB(const glm::vec3& yuv);
+glm::vec3 RGB2YUV(const glm::vec3& rgb);
 
 } // namespace cescg
