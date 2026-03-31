@@ -109,10 +109,10 @@ public:
     int GetHeight() const { return m_Height; }
 
     // Get value by copy. No boundary checks.
-    scalar_t GetValue(int i, int j) const { return m_Data[j * m_Height + i]; }
+    scalar_t GetValue(int i, int j) const { return m_Data[j * m_Width + i]; }
 
     // Get value by reference. No boundary checks.
-    scalar_t& GetValue(int i, int j) { return m_Data[j * m_Height + i]; }
+    scalar_t& GetValue(int i, int j) { return m_Data[j * m_Width + i]; }
 
     // Get value by copy. No boundary checks.
     scalar_t operator()(int i, int j) const { return GetValue(i, j); }
