@@ -70,20 +70,30 @@ cescg::Grid<int> cescg::VoronoiPartitioning(const cescg::Image &Img,
     return G;
 }
 
-std::vector<std::vector<glm::ivec2>> cescg::VoronoiPartitioning(const std::vector<glm::ivec2> &Samples, 
-                                                                const glm::ivec2& BottomLeft,
-                                                                const glm::ivec2& TopRight)
+bool AngleCompare(const glm::vec2& a, const glm::vec2& b)
+{
+    return std::atan2(a.y, a.x) < std::atan2(b.y, b.x);
+}
+
+std::vector<std::vector<glm::vec2>> cescg::VoronoiPartitioning(const std::vector<glm::ivec2> &Samples, 
+                                                               const glm::ivec2& BottomLeft,
+                                                               const glm::ivec2& TopRight)
 {
     // Init each region to the whole bounding box
-    std::vector<std::vector<glm::ivec2>> Regions;
+    std::vector<std::vector<glm::vec2>> Regions;
     Regions.resize(Samples.size());
     for (auto& r : Regions)
     {
         r.emplace_back(BottomLeft);
-        r.emplace_back(TopRight.x, BottomLeft.y);
-        r.emplace_back(TopRight);
         r.emplace_back(BottomLeft.x, TopRight.y);
+        r.emplace_back(TopRight);
+        r.emplace_back(TopRight.x, BottomLeft.y);
     }
+
+    std::vector<glm::vec2> FSamples;
+    FSamples.resize(Samples.size());
+    for (int i = 0; i < Samples.size(); ++i)
+        FSamples[i] = Samples[i];
 
     // Execute region cuts in parallel
     #pragma omp parallel for
@@ -96,9 +106,9 @@ std::vector<std::vector<glm::ivec2>> cescg::VoronoiPartitioning(const std::vecto
                 continue;
 
             // Find midpoint
-            glm::vec2 Midpoint = 0.5f * glm::vec2(Samples[i] + Samples[j]);
+            glm::vec2 Midpoint = 0.5f * (FSamples[i] + FSamples[j]);
             // Find the direction of the perpendicular bisector
-            glm::vec2 Direction(-(Samples[j].y - Samples[i].y), Samples[j].x - Samples[i].x);
+            glm::vec2 Direction(-(FSamples[j].y - FSamples[i].y), FSamples[j].x - FSamples[i].x);
             Direction = glm::normalize(Direction);
             // Find the two segments that intersect the perpendicular bisector
             std::vector<std::pair<int, glm::vec2>> Intersections;
@@ -106,7 +116,7 @@ std::vector<std::vector<glm::ivec2>> cescg::VoronoiPartitioning(const std::vecto
             {
                 int k1 = (k0 + 1) % Regions[i].size();
                 glm::vec2 v = Regions[i][k0];
-                glm::vec2 e = glm::vec2(Regions[i][k1]) - v;
+                glm::vec2 e = Regions[i][k1] - v;
                 // Intersection at v + t * e = Midpoint + s * Direction
                 float det = -e.x * Direction.y + e.y * Direction.x;
                 if (std::abs(det) < 1e-6) // Parallel vectors
@@ -117,7 +127,7 @@ std::vector<std::vector<glm::ivec2>> cescg::VoronoiPartitioning(const std::vecto
                 // float m22 = e.x / det; // We don't need s
                 float t = m11 * (Midpoint.x - v.x) + m12 * (Midpoint.y - v.y);
                 // t must be in [0, 1]
-                if (t < 0 || t > 1)
+                if (t < 1e-6 || t > 1 - 1e-6)
                     continue;
                 Intersections.emplace_back(k0, v + t * e);
             }
@@ -125,12 +135,12 @@ std::vector<std::vector<glm::ivec2>> cescg::VoronoiPartitioning(const std::vecto
             if (Intersections.size() < 2)
                 continue;
             // Boundary polygon is oriented clockwise
-            if (glm::length(glm::vec2(Regions[i][Intersections[0].first] - Samples[j])) < glm::length(glm::vec2(Regions[i][Intersections[0].first] - Samples[i])))
+            if (glm::length(Regions[i][Intersections[0].first] - FSamples[j]) < glm::length(Regions[i][Intersections[0].first] - FSamples[i]))
             {
                 // If the first vertex of the first intersecting segment is closer to j,
                 // then we take from first to second and connect the intersections.
-                std::vector<glm::ivec2> NewReg;
-                for (int k = (Intersections[0].first + 1) % Regions[i].size(); k != Intersections[1].first; k = (k + 1) % Regions[i].size())
+                std::vector<glm::vec2> NewReg;
+                for (int k = (Intersections[0].first + 1) % Regions[i].size(); k != (Intersections[1].first + 1) % Regions[i].size(); k = (k + 1) % Regions[i].size())
                     NewReg.emplace_back(Regions[i][k]);
                 NewReg.emplace_back(glm::round(Intersections[1].second));
                 NewReg.emplace_back(glm::round(Intersections[0].second));
@@ -139,14 +149,21 @@ std::vector<std::vector<glm::ivec2>> cescg::VoronoiPartitioning(const std::vecto
             else
             {
                 // Otherwise, we take from second to first and connect the intersections
-                std::vector<glm::ivec2> NewReg;
-                for (int k = (Intersections[1].first + 1) % Regions[i].size(); k != Intersections[0].first; k = (k + 1) % Regions[i].size())
+                std::vector<glm::vec2> NewReg;
+                for (int k = (Intersections[1].first + 1) % Regions[i].size(); k != (Intersections[0].first + 1) % Regions[i].size(); k = (k + 1) % Regions[i].size())
                     NewReg.emplace_back(Regions[i][k]);
                 NewReg.emplace_back(glm::round(Intersections[0].second));
                 NewReg.emplace_back(glm::round(Intersections[1].second));
                 Regions[i] = NewReg;
             }
         }
+
+    //     glm::vec2 Centroid(0.0f);
+    //     for (const auto& v : Regions[i])
+    //         Centroid += v;
+    //     Centroid /= Regions[i].size();
+
+    //     std::sort(Regions[i].begin(), Regions[i].end(), [Centroid](const glm::vec2& v1, const glm::vec2& v2) { return AngleCompare(v2 - Centroid, v1 - Centroid); });
     }
 
     return Regions;

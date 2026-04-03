@@ -35,8 +35,16 @@ int main(int argc, const char* const argv[])
         Samples.emplace_back(cescg::RandGen::GetInstance().RandomInteger(0, Img.GetWidth()),
                              cescg::RandGen::GetInstance().RandomInteger(0, Img.GetHeight()));
 
-    std::vector<std::vector<glm::ivec2>> VPolys = cescg::VoronoiPartitioning(Samples, glm::ivec2(0, 0), glm::ivec2(Img.GetWidth(), Img.GetHeight()));
+    std::vector<std::vector<glm::vec2>> VPolys = cescg::VoronoiPartitioning(Samples, glm::ivec2(0, 0), glm::ivec2(Img.GetWidth(), Img.GetHeight()));
     std::cout << "Voronoi computed" << std::endl;
+    int MinGon = std::numeric_limits<int>::max();
+    int MaxGon = 0;
+    for (const auto& p : VPolys)
+    {
+        MinGon = std::min(MinGon, (int)p.size());
+        MaxGon = std::max(MaxGon, (int)p.size());
+    }
+    std::cout << MinGon << " to " << MaxGon << std::endl;
     std::vector<std::vector<glm::ivec2>> Pixels;
     Pixels.resize(Samples.size());
     for (int s = 0; s < Samples.size(); ++s)
@@ -47,19 +55,36 @@ int main(int argc, const char* const argv[])
     std::vector<glm::vec3> Colors;
     Colors.reserve(NumSamples);
     for (int s = 0; s < NumSamples; ++s)
-        Colors.emplace_back(Img.GetPixel(Samples[s].x, Samples[s].y));
+    {
+        // Colors.emplace_back(Img.GetPixel(Samples[s].x, Samples[s].y));
+        Colors.emplace_back(cescg::RandGen::GetInstance().RandomReal(),
+                            cescg::RandGen::GetInstance().RandomReal(),
+                            cescg::RandGen::GetInstance().RandomReal());
+        // Colors.emplace_back(1.0f);
+    }
     
     cescg::Image VoroImg(Img.GetWidth(), Img.GetHeight(), 3);
     for (int s = 0; s < Samples.size(); ++s)
     {
         for (const auto& p : Pixels[s])
+        {
+            if (p.x < 0 || p.x >= Img.GetWidth())
+                continue;
+            if (p.y < 0 || p.y >= Img.GetHeight())
+                continue;
             VoroImg.SetPixel(p.x, p.y, Colors[s]);
+        }
     }
-    // for (int j = 0; j < VoroImg.GetHeight(); ++j)
-    // {
-    //     for (int i = 0; i < VoroImg.GetWidth(); ++i)
-    //         VoroImg.SetPixel(i, j, Colors[VPart(i, j)]);
-    // }
+    for (int s = 0; s < Samples.size(); ++s)
+    {
+        VoroImg.DrawDot(Samples[s].x, Samples[s].y, 5, glm::vec3(1.0f));
+        for (const glm::vec2& v : VPolys[s])
+        {
+            VoroImg.DrawDot((int)v.x, (int)v.y, 2, glm::vec3(0.5f));
+        }
+    }
+
+    std::cout << "Image colored" << std::endl;
 
     VoroImg.Export(OUT_DIR "/voronoi.jpg");
 

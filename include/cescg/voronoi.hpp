@@ -16,20 +16,26 @@
 
 namespace cescg
 {
+
+struct VoronoiRegion
+{
+    glm::vec2 Site;
+    std::vector<glm::vec2> Polygon;
+};
     
 cescg::Grid<int> VoronoiPartitioning(const cescg::Image& Img,
                                      const std::vector<glm::ivec2>& Samples);
 
-std::vector<std::vector<glm::ivec2>> VoronoiPartitioning(const std::vector<glm::ivec2>& Samples,
-                                                         const glm::ivec2& BottomLeft,
-                                                         const glm::ivec2& TopRight);
-
-
-std::vector<glm::ivec2> PixelsFromConvexPolygon(const std::vector<glm::ivec2>& Polygon);
+std::vector<std::vector<glm::vec2>> VoronoiPartitioning(const std::vector<glm::ivec2>& Samples,
+                                                        const glm::ivec2& BottomLeft,
+                                                        const glm::ivec2& TopRight);
 
 
 cescg::Grid<int> CentroidalVoronoi(const cescg::Image& Img,
                                    std::vector<glm::ivec2>& Samples);
+
+
+std::vector<glm::ivec2> PixelsFromConvexPolygon(const std::vector<glm::vec2>& Polygon);
 
 
 cescg::Grid<int> VoronoiTexture(int Width, 
