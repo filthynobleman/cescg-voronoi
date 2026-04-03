@@ -171,16 +171,19 @@ float cescg::Image::GetLuminance(int i, int j) const
     if (m_NCh == 1)
         return m_Data[j * m_Width + i];
     glm::vec3 p = GetPixel(i, j);
+    p = glm::pow(p, glm::vec3(GAMMA_FACTOR));
     // Conversion to luminance according to ITU-R Recommendation BT.2020
-    return Y2020KR * p.r + Y2020KG * p.g + Y2020KB * p.b;
+    return glm::pow(Y2020KR * p.r + Y2020KG * p.g + Y2020KB * p.b, 1.0f / GAMMA_FACTOR);
 }
 
 void cescg::Image::SetPixel(int i, int j, const glm::vec3 &Value)
 {
     if (m_NCh == 1)
     {
-        float Luma = Y2020KR * Value.r + Y2020KG * Value.g + Y2020KB * Value.b;
-        m_Data[j * m_Width + i] = Luma;
+        float Luma = Y2020KR * glm::pow(Value.r, GAMMA_FACTOR) + 
+                     Y2020KG * glm::pow(Value.g, GAMMA_FACTOR) + 
+                     Y2020KB * glm::pow(Value.b, GAMMA_FACTOR);
+        m_Data[j * m_Width + i] = glm::pow(Luma, 1.0f / GAMMA_FACTOR);
         return;
     }
 
@@ -217,6 +220,55 @@ cescg::Image cescg::Image::ToGrayscale() const
     }
 
     return Img;
+}
+
+void cescg::Image::DrawDot(int i, int j, int Radius, float Luminance)
+{
+    double r_sqr = (Radius + 0.5) * (Radius + 0.5);
+    for (int dj = - Radius; dj <= Radius; ++dj)
+    {
+        int jj = j + dj;
+        if (jj < 0 || jj >= GetHeight())
+            continue;
+        for (int di = -Radius; di <= Radius; ++di)
+        {
+            int ii = i + di;
+            if (ii < 0 || ii >= GetWidth())
+                continue;
+            
+            double d_sqr = di * di + dj * dj;
+            if (d_sqr > r_sqr)
+                continue;
+
+            if (m_NCh == 1)
+                SetLuminance(ii, jj, Luminance);
+            else
+                SetPixel(ii, jj, glm::vec3(Luminance));
+        }
+    }
+}
+
+void cescg::Image::DrawDot(int i, int j, int Radius, const glm::vec3 &Color)
+{
+    double r_sqr = (Radius + 0.5) * (Radius + 0.5);
+    for (int dj = - Radius; dj <= Radius; ++dj)
+    {
+        int jj = j + dj;
+        if (jj < 0 || jj >= GetHeight())
+            continue;
+        for (int di = -Radius; di <= Radius; ++di)
+        {
+            int ii = i + di;
+            if (ii < 0 || ii >= GetWidth())
+                continue;
+            
+            double d_sqr = di * di + dj * dj;
+            if (d_sqr > r_sqr)
+                continue;
+
+            SetPixel(ii, jj, Color);
+        }
+    }
 }
 
 bool cescg::Image::Export(const std::string &Filename) const

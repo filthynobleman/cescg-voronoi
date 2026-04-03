@@ -27,7 +27,9 @@ include_directories("${CMAKE_SOURCE_DIR}/include")
 # Compile project library
 add_library(CESCG STATIC    "${CMAKE_SOURCE_DIR}/src/cescg/image.cpp"
                             "${CMAKE_SOURCE_DIR}/src/cescg/randgen.cpp"
-                            "${CMAKE_SOURCE_DIR}/src/cescg/voronoi/voronoi_part.cpp")
+                            "${CMAKE_SOURCE_DIR}/src/cescg/voronoi/voronoi_part.cpp"
+                            "${CMAKE_SOURCE_DIR}/src/cescg/voronoi/voronoi_centroidal.cpp"
+                            "${CMAKE_SOURCE_DIR}/src/cescg/voronoi/voronoi_utils.cpp")
 set_target_properties(CESCG PROPERTIES CXX_STANDARD 17)
 if (OpenMP_FOUND)
     target_link_libraries(CESCG OpenMP::OpenMP_CXX)
@@ -49,4 +51,12 @@ if (OpenMP_FOUND)
     target_link_libraries(TestVoronoi CESCG OpenMP::OpenMP_CXX)
 else()
     target_link_libraries(TestVoronoi CESCG)
+endif()
+
+add_executable(TestVoronoiCentroidal "${CMAKE_SOURCE_DIR}/src/test/test_voronoi_centroidal.cpp")
+set_target_properties(TestVoronoiCentroidal PROPERTIES CXX_STANDARD 17)
+if (OpenMP_FOUND)
+    target_link_libraries(TestVoronoiCentroidal CESCG OpenMP::OpenMP_CXX)
+else()
+    target_link_libraries(TestVoronoiCentroidal CESCG)
 endif()

@@ -22,7 +22,7 @@ class Grid
 private:
     int m_Width;
     int m_Height;
-    scalar_t* m_Data;
+    std::vector<scalar_t> m_Data;
 
 public:
     // Initializes the grid to whatever 0 means.
@@ -30,9 +30,7 @@ public:
     {
         m_Width = Width;
         m_Height = Height;
-        m_Data = (scalar_t*)std::calloc(m_Width * m_Height, sizeof(scalar_t));
-        if (m_Data == nullptr)
-            throw std::runtime_error("Cannot initialize the grid.");
+        m_Data.resize(m_Width * m_Height);
     }
 
     // Initializes the grid to a default value
@@ -40,14 +38,7 @@ public:
     {
         m_Width = Width;
         m_Height = Height;
-        m_Data = (scalar_t*)std::malloc(m_Width * m_Height * sizeof(scalar_t));
-        if (m_Data == nullptr)
-            throw std::runtime_error("Cannot initialize the grid.");
-        for (int j = 0; j < m_Height; ++j)
-        {
-            for (int i = 0; i < m_Width; ++i)
-                m_Data[j * m_Width + i] = Default;
-        }
+        m_Data.resize(m_Width * m_Height, Default);
     }
 
     // Copy constructor
@@ -55,12 +46,7 @@ public:
     {
         m_Width = G.m_Width;
         m_Height = G.m_Height;
-        m_Data = (scalar_t*)std::malloc(m_Width * m_Height * sizeof(scalar_t));
-        if (m_Data == nullptr)
-            throw std::runtime_error("Cannot initialize the grid.");
-        m_Data = (scalar_t*)std::memcpy(m_Data, G.m_Data, m_Width * m_Height * sizeof(scalar_t));
-        if (m_Data == nullptr)
-            throw std::runtime_error("Cannot copy the grid.");
+        m_Data = G.m_Data;
     }
 
     // Move constructor
@@ -68,8 +54,7 @@ public:
     {
         m_Width = G.m_Width;
         m_Height = G.m_Height;
-        m_Data = G.m_Data;
-        G.m_Data = nullptr;
+        m_Data = std::move(G.m_Data);
     }
 
     // Copy-assignment operator
@@ -77,12 +62,7 @@ public:
     {
         m_Width = G.m_Width;
         m_Height = G.m_Height;
-        m_Data = (scalar_t*)std::malloc(m_Width * m_Height * sizeof(scalar_t));
-        if (m_Data == nullptr)
-            throw std::runtime_error("Cannot initialize the grid.");
-        m_Data = (scalar_t*)std::memcpy(m_Data, G.m_Data, m_Width * m_Height * sizeof(scalar_t));
-        if (m_Data == nullptr)
-            throw std::runtime_error("Cannot copy the grid.");
+        m_Data = G.m_Data;
         return *this;
     }
 
@@ -91,16 +71,12 @@ public:
     {
         m_Width = G.m_Width;
         m_Height = G.m_Height;
-        m_Data = G.m_Data;
-        G.m_Data = nullptr;
+        m_Data = std::move(G.m_Data);
         return *this;
     }
     
     // Free the memory
-    ~Grid()
-    {
-        delete m_Data;
-    }
+    ~Grid() { }
 
 
     // Grid width
