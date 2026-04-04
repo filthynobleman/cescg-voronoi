@@ -9,6 +9,8 @@
  */
 #include <cescg/voronoi.hpp>
 
+#include <cescg/delaunay.hpp>
+
 
 cescg::Grid<int> cescg::VoronoiPartitioning(const cescg::Image &Img, 
                                             const std::vector<glm::ivec2> &Samples)
@@ -75,96 +77,154 @@ bool AngleCompare(const glm::vec2& a, const glm::vec2& b)
     return std::atan2(a.y, a.x) < std::atan2(b.y, b.x);
 }
 
+float Dot2D(const glm::vec2& a, const glm::vec2& b) {
+    return glm::dot(a, b);
+}
+
+float Cross2D(const glm::vec2& a, const glm::vec2& b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+struct HalfPlane {
+    glm::vec2 n;
+    float c;
+
+    float Eval(const glm::vec2& p) const {
+        return Dot2D(n, p) + c;
+    }
+};
+
+HalfPlane PerpBisector(const glm::vec2& pi, const glm::vec2& pj) {
+    glm::vec2 mid = 0.5f * (pi + pj);
+    glm::vec2 n = pj - pi;  // points from i to j
+
+    // Normalize to improve numerical stability
+    float len = glm::length(n);
+    if (len > 0.0f) n /= len;
+
+    float c = -Dot2D(n, mid);
+
+    // Keep the half-plane containing pi
+    if (Dot2D(n, pi) + c > 0.0f) {
+        n = -n;
+        c = -c;
+    }
+
+    return {n, c};
+}
+
+glm::vec2 SegmentLineIntersection(
+    const glm::vec2& A,
+    const glm::vec2& B,
+    float dA,
+    float dB)
+{
+    float denom = dB - dA;
+
+    // Assume already checked it's not degenerate
+    float t = -dA / denom;
+
+    // Clamp for safety
+    t = glm::clamp(t, 0.0f, 1.0f);
+
+    return A + t * (B - A);
+}
+
+std::vector<glm::vec2> ClipPolygon(
+    const std::vector<glm::vec2>& poly,
+    const HalfPlane& hp)
+{
+    const float eps = 1e-6f;
+
+    std::vector<glm::vec2> out;
+
+    if (poly.empty()) return out;
+
+    for (size_t i = 0; i < poly.size(); ++i) {
+        glm::vec2 A = poly[i];
+        glm::vec2 B = poly[(i + 1) % poly.size()];
+
+        float dA = hp.Eval(A);
+        float dB = hp.Eval(B);
+
+        if (std::abs(dA) < eps) dA = 0.0f;
+        if (std::abs(dB) < eps) dB = 0.0f;
+
+        bool insideA = dA <= 0.0f;
+        bool insideB = dB <= 0.0f;
+
+        if (insideA && insideB) {
+            // keep B
+            out.push_back(B);
+        }
+        else if (insideA && !insideB) {
+            // exiting → add intersection
+            glm::vec2 I = SegmentLineIntersection(A, B, dA, dB);
+            out.push_back(I);
+        }
+        else if (!insideA && insideB) {
+            // entering → add intersection + B
+            glm::vec2 I = SegmentLineIntersection(A, B, dA, dB);
+            out.push_back(I);
+            out.push_back(B);
+        }
+        // else both outside → nothing
+    }
+
+    return out;
+}
+
+std::vector<std::vector<glm::vec2>> VoronoiCompute(
+    const std::vector<glm::vec2>& points,
+    const std::vector<glm::vec2>& domain)
+{
+    int n = points.size();
+    std::vector<std::vector<glm::vec2>> cells(n);
+
+    #pragma omp parallel for
+    for (int i = 0; i < n; ++i) {
+        std::vector<glm::vec2> cell = domain;
+
+        for (int j = 0; j < n; ++j) {
+            if (i == j) continue;
+
+            HalfPlane hp = PerpBisector(points[i], points[j]);
+
+            cell = ClipPolygon(cell, hp);
+
+            if (cell.empty()) break;
+        }
+
+        cells[i] = cell;
+    }
+
+    return cells;
+}
+
 std::vector<std::vector<glm::vec2>> cescg::VoronoiPartitioning(const std::vector<glm::ivec2> &Samples, 
                                                                const glm::ivec2& BottomLeft,
                                                                const glm::ivec2& TopRight)
 {
-    // Init each region to the whole bounding box
-    std::vector<std::vector<glm::vec2>> Regions;
-    Regions.resize(Samples.size());
-    for (auto& r : Regions)
-    {
-        r.emplace_back(BottomLeft);
-        r.emplace_back(BottomLeft.x, TopRight.y);
-        r.emplace_back(TopRight);
-        r.emplace_back(TopRight.x, BottomLeft.y);
-    }
+    std::vector<glm::vec2> Domain;
+    Domain.emplace_back(BottomLeft.x, BottomLeft.y);
+    Domain.emplace_back(BottomLeft.x, TopRight.y);
+    Domain.emplace_back(TopRight.x, TopRight.y);
+    Domain.emplace_back(TopRight.x, BottomLeft.y);
 
     std::vector<glm::vec2> FSamples;
     FSamples.resize(Samples.size());
     for (int i = 0; i < Samples.size(); ++i)
         FSamples[i] = Samples[i];
 
-    // Execute region cuts in parallel
-    #pragma omp parallel for
-    for (int i = 0; i < Samples.size(); ++i)
+    std::vector<std::vector<glm::vec2>> Regions = VoronoiCompute(FSamples, Domain);
+    for (auto& r : Regions)
     {
-        // For each other sample, find perpendicular bisector and cut
-        for (int j = 0; j < Samples.size(); ++j)
-        {
-            if (i == j)
-                continue;
-
-            // Find midpoint
-            glm::vec2 Midpoint = 0.5f * (FSamples[i] + FSamples[j]);
-            // Find the direction of the perpendicular bisector
-            glm::vec2 Direction(-(FSamples[j].y - FSamples[i].y), FSamples[j].x - FSamples[i].x);
-            Direction = glm::normalize(Direction);
-            // Find the two segments that intersect the perpendicular bisector
-            std::vector<std::pair<int, glm::vec2>> Intersections;
-            for (int k0 = 0; k0 < Regions[i].size(); ++k0)
-            {
-                int k1 = (k0 + 1) % Regions[i].size();
-                glm::vec2 v = Regions[i][k0];
-                glm::vec2 e = Regions[i][k1] - v;
-                // Intersection at v + t * e = Midpoint + s * Direction
-                float det = -e.x * Direction.y + e.y * Direction.x;
-                if (std::abs(det) < 1e-6) // Parallel vectors
-                    continue;
-                float m11 = -Direction.y / det;
-                float m12 = Direction.x / det;
-                // float m21 = -e.y / det; // We don't need s
-                // float m22 = e.x / det; // We don't need s
-                float t = m11 * (Midpoint.x - v.x) + m12 * (Midpoint.y - v.y);
-                // t must be in [0, 1]
-                if (t < 1e-6 || t > 1 - 1e-6)
-                    continue;
-                Intersections.emplace_back(k0, v + t * e);
-            }
-            // If no intersections, skip
-            if (Intersections.size() < 2)
-                continue;
-            // Boundary polygon is oriented clockwise
-            if (glm::length(Regions[i][Intersections[0].first] - FSamples[j]) < glm::length(Regions[i][Intersections[0].first] - FSamples[i]))
-            {
-                // If the first vertex of the first intersecting segment is closer to j,
-                // then we take from first to second and connect the intersections.
-                std::vector<glm::vec2> NewReg;
-                for (int k = (Intersections[0].first + 1) % Regions[i].size(); k != (Intersections[1].first + 1) % Regions[i].size(); k = (k + 1) % Regions[i].size())
-                    NewReg.emplace_back(Regions[i][k]);
-                NewReg.emplace_back(glm::round(Intersections[1].second));
-                NewReg.emplace_back(glm::round(Intersections[0].second));
-                Regions[i] = NewReg;
-            }
-            else
-            {
-                // Otherwise, we take from second to first and connect the intersections
-                std::vector<glm::vec2> NewReg;
-                for (int k = (Intersections[1].first + 1) % Regions[i].size(); k != (Intersections[0].first + 1) % Regions[i].size(); k = (k + 1) % Regions[i].size())
-                    NewReg.emplace_back(Regions[i][k]);
-                NewReg.emplace_back(glm::round(Intersections[0].second));
-                NewReg.emplace_back(glm::round(Intersections[1].second));
-                Regions[i] = NewReg;
-            }
-        }
-
-    //     glm::vec2 Centroid(0.0f);
-    //     for (const auto& v : Regions[i])
-    //         Centroid += v;
-    //     Centroid /= Regions[i].size();
-
-    //     std::sort(Regions[i].begin(), Regions[i].end(), [Centroid](const glm::vec2& v1, const glm::vec2& v2) { return AngleCompare(v2 - Centroid, v1 - Centroid); });
+        glm::vec2 Centroid(0.0f);
+        for (const auto& v : r)
+            Centroid += v;
+        Centroid /= r.size();
+        std::sort(r.begin(), r.end(),
+                  [Centroid](const glm::vec2& a, const glm::vec2& b) { return AngleCompare(a - Centroid, b - Centroid); });
     }
-
     return Regions;
 }

@@ -58,3 +58,21 @@ cescg::Grid<int> cescg::CentroidalVoronoi(const cescg::Image &Img,
 
     return G;
 }
+
+
+std::vector<std::vector<glm::vec2>> cescg::CentroidalVoronoi(const std::vector<glm::ivec2> &Samples, 
+                                                             const glm::ivec2 &BottomLeft, 
+                                                             const glm::ivec2 &TopRight)
+{
+    std::vector<std::vector<glm::vec2>> VPolys;
+    bool Converged = false;
+    for (int Iter = 0; Iter < 20 && !Converged; ++Iter)
+    {
+        VPolys = cescg::VoronoiPartitioning(Samples, BottomLeft, TopRight);
+        #pragma omp parallel for
+        for (int i = 0; i < VPolys.size(); ++i)
+        {
+            
+        }
+    }
+}

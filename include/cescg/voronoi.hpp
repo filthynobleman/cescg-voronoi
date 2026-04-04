@@ -34,6 +34,10 @@ std::vector<std::vector<glm::vec2>> VoronoiPartitioning(const std::vector<glm::i
 cescg::Grid<int> CentroidalVoronoi(const cescg::Image& Img,
                                    std::vector<glm::ivec2>& Samples);
 
+std::vector<std::vector<glm::vec2>> CentroidalVoronoi(const std::vector<glm::ivec2>& Samples,
+                                                      const glm::ivec2& BottomLeft,
+                                                      const glm::ivec2& TopRight);
+
 
 std::vector<glm::ivec2> PixelsFromConvexPolygon(const std::vector<glm::vec2>& Polygon);
 

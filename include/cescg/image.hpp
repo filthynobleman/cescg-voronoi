@@ -89,6 +89,11 @@ public:
     // With single channel images, luminance is extracted from the color.
     void DrawDot(int i, int j, int Radius, const glm::vec3& Color);
 
+
+    void DrawLine(const glm::ivec2& Start, const glm::ivec2& End, int Width, const glm::vec3& Color);
+    
+    void DrawLine(const glm::ivec2& Start, const glm::ivec2& End, int Width, float Luminance);
+
     // Exports the image to the given filename, if allowed.
     // Directories are created, if needed. Pixels values are clamped to sane ranges.
     bool Export(const std::string& Filename) const;

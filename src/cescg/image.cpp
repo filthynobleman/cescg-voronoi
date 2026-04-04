@@ -160,6 +160,9 @@ int cescg::Image::GetChannels() const { return m_NCh; }
 
 glm::vec3 cescg::Image::GetPixel(int i, int j) const
 {
+    if (i < 0 || i >= GetWidth() || j < 0 || j >= GetHeight())
+        return glm::vec3(-1.0f);
+
     if (m_NCh == 1)
         return glm::vec3(m_Data[j * m_Width + i]);
     size_t Idx = (j * m_Width + i) * m_NCh;
@@ -168,6 +171,9 @@ glm::vec3 cescg::Image::GetPixel(int i, int j) const
 
 float cescg::Image::GetLuminance(int i, int j) const
 {
+    if (i < 0 || i >= GetWidth() || j < 0 || j >= GetHeight())
+        return -1.0f;
+
     if (m_NCh == 1)
         return m_Data[j * m_Width + i];
     glm::vec3 p = GetPixel(i, j);
@@ -178,6 +184,9 @@ float cescg::Image::GetLuminance(int i, int j) const
 
 void cescg::Image::SetPixel(int i, int j, const glm::vec3 &Value)
 {
+    if (i < 0 || i >= GetWidth() || j < 0 || j >= GetHeight())
+        return;
+
     if (m_NCh == 1)
     {
         float Luma = Y2020KR * glm::pow(Value.r, GAMMA_FACTOR) + 
@@ -195,6 +204,9 @@ void cescg::Image::SetPixel(int i, int j, const glm::vec3 &Value)
 
 void cescg::Image::SetLuminance(int i, int j, float Value)
 {
+    if (i < 0 || i >= GetWidth() || j < 0 || j >= GetHeight())
+        return;
+
     if (m_NCh == 1)
     {
         m_Data[j * m_Width + i] = Value;
@@ -224,28 +236,7 @@ cescg::Image cescg::Image::ToGrayscale() const
 
 void cescg::Image::DrawDot(int i, int j, int Radius, float Luminance)
 {
-    double r_sqr = (Radius + 0.5) * (Radius + 0.5);
-    for (int dj = - Radius; dj <= Radius; ++dj)
-    {
-        int jj = j + dj;
-        if (jj < 0 || jj >= GetHeight())
-            continue;
-        for (int di = -Radius; di <= Radius; ++di)
-        {
-            int ii = i + di;
-            if (ii < 0 || ii >= GetWidth())
-                continue;
-            
-            double d_sqr = di * di + dj * dj;
-            if (d_sqr > r_sqr)
-                continue;
-
-            if (m_NCh == 1)
-                SetLuminance(ii, jj, Luminance);
-            else
-                SetPixel(ii, jj, glm::vec3(Luminance));
-        }
-    }
+    DrawDot(i, j, Radius, glm::vec3(Luminance));
 }
 
 void cescg::Image::DrawDot(int i, int j, int Radius, const glm::vec3 &Color)
@@ -269,6 +260,46 @@ void cescg::Image::DrawDot(int i, int j, int Radius, const glm::vec3 &Color)
             SetPixel(ii, jj, Color);
         }
     }
+}
+
+void cescg::Image::DrawLine(const glm::ivec2 &Start, const glm::ivec2 &End, int Width, const glm::vec3 &Color)
+{
+    glm::ivec2 Diff = End - Start;
+    // if (Diff.x == 0)
+    // {
+    //     for (int y = std::min(Start.y, End.y); y <= std::max(Start.y, End.y); ++y)
+    //     {
+    //         for (int x = Start.x - Width / 2; x <= Start.x + Width / 2; ++x)
+    //             SetPixel(x, y, Color);
+    //     }
+    // }
+    float XDiff = Diff.x;
+    float YDiff = Diff.y;
+    if (std::abs(XDiff) > std::abs(YDiff))
+    {
+        float Slope = YDiff / XDiff;
+        for (int x = std::min(Start.x, End.x); x <= std::max(Start.x, End.x); ++x)
+        {
+            int y = Start.y + ((x - Start.x) * Slope);
+            for (int yy = y - Width / 2; yy <= y + Width / 2; ++yy)
+                SetPixel(x, yy, Color);
+        }
+    }
+    else
+    {
+        float Slope = XDiff / YDiff;
+        for (int y = std::min(Start.y, End.y); y <= std::max(Start.y, End.y); ++y)
+        {
+            int x = Start.x + ((y - Start.y) * Slope);
+            for (int xx = x - Width / 2; xx <= x + Width / 2; ++xx)
+                SetPixel(xx, y, Color);
+        }
+    }
+}
+
+void cescg::Image::DrawLine(const glm::ivec2 &Start, const glm::ivec2 &End, int Width, float Luminance)
+{
+    DrawLine(Start, End, Width, glm::vec3(Luminance));
 }
 
 bool cescg::Image::Export(const std::string &Filename) const

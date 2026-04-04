@@ -31,15 +31,15 @@ void PixelsFromFlatBottomTriangle(const glm::ivec2& a,
                                   const glm::ivec2& c,
                                   std::vector<glm::ivec2>& Pixels)
 {
-    float SlopeAB = (b.x - a.x) / (float)(b.y - a.y);
-    float SlopeAC = (c.x - a.x) / (float)(c.y - a.y);
-    float XAB = a.x;
-    float XAC = a.x;
-    for (int y = a.y; y <= b.y; ++y)
+    float SlopeBC = (b.x - c.x) / (float)(b.y - c.y);
+    float SlopeAC = (a.x - c.x) / (float)(a.y - c.y);
+    float XBC = c.x;
+    float XAC = c.x;
+    for (int y = c.y; y >= a.y; --y)
     {
-        PixelsFromLine(XAB, XAC, y, Pixels);
-        XAB += SlopeAB;
-        XAC += SlopeAC;
+        PixelsFromLine(XBC, XAC, y, Pixels);
+        XBC -= SlopeBC;
+        XAC -= SlopeAC;
     }
 }
 
@@ -48,15 +48,15 @@ void PixelsFromFlatTopTriangle(const glm::ivec2& a,
                                const glm::ivec2& c,
                                std::vector<glm::ivec2>& Pixels)
 {
-    float SlopeAC = (c.x - a.x) / (float)(c.y - a.y);
-    float SlopeBC = (c.x - b.x) / (float)(c.y - b.y);
-    float XAC = c.x;
-    float XBC = c.x;
-    for (int y = c.y; y >= a.y; --y)
+    float SlopeAC = (a.x - c.x) / (float)(a.y - c.y);
+    float SlopeAB = (a.x - b.x) / (float)(a.y - b.y);
+    float XAC = a.x;
+    float XAB = a.x;
+    for (int y = a.y; y <= c.y; ++y)
     {
-        PixelsFromLine(XAC, XBC, y, Pixels);
-        XAC -= SlopeAC;
-        XBC -= SlopeBC;
+        PixelsFromLine(XAC, XAB, y, Pixels);
+        XAC += SlopeAC;
+        XAB += SlopeAB;
     }
 }
 
@@ -68,18 +68,18 @@ void PixelsFromTriangle(const glm::ivec2& a,
 {
     if (a.y == b.y)
     {
-        PixelsFromFlatTopTriangle(a, b, c, Pixels);
+        PixelsFromFlatBottomTriangle(a, b, c, Pixels);
         return;
     }
     else if (b.y == c.y)
     {
-        PixelsFromFlatBottomTriangle(a, b, c, Pixels);
+        PixelsFromFlatTopTriangle(a, b, c, Pixels);
     }
     glm::ivec2 t;
     t.x = a.x + ((float)(b.y - a.y) / (float)(c.y - a.y)) * (c.x - a.x);
     t.y = b.y;
-    PixelsFromFlatBottomTriangle(a, b, t, Pixels);
-    PixelsFromFlatTopTriangle(b, t, c, Pixels);
+    PixelsFromFlatTopTriangle(a, b, t, Pixels);
+    PixelsFromFlatBottomTriangle(b, t, c, Pixels);
 }
 
 #include <iostream>

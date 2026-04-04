@@ -27,6 +27,7 @@ include_directories("${CMAKE_SOURCE_DIR}/include")
 # Compile project library
 add_library(CESCG STATIC    "${CMAKE_SOURCE_DIR}/src/cescg/image.cpp"
                             "${CMAKE_SOURCE_DIR}/src/cescg/randgen.cpp"
+                            "${CMAKE_SOURCE_DIR}/src/cescg/delaunay.cpp"
                             "${CMAKE_SOURCE_DIR}/src/cescg/voronoi/voronoi_part.cpp"
                             "${CMAKE_SOURCE_DIR}/src/cescg/voronoi/voronoi_centroidal.cpp"
                             "${CMAKE_SOURCE_DIR}/src/cescg/voronoi/voronoi_utils.cpp")
