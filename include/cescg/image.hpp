@@ -81,18 +81,16 @@ public:
     // With single channel images, creates a copy of itself.
     cescg::Image ToGrayscale() const;
 
-    // Draw a dot centered at (i, j) with given radius.
-    // Dot is in grayscale, with given luminance
-    void DrawDot(int i, int j, int Radius, float Luminance);
 
-    // Draw dot centered at (i, j) with given radius and color.
-    // With single channel images, luminance is extracted from the color.
-    void DrawDot(int i, int j, int Radius, const glm::vec3& Color);
+    // Set value of multiple pixels at once.
+    // See SetPixel() for reference.
+    void DrawPixels(const std::vector<glm::ivec2>& Pixels,
+                    const glm::vec3& Color);
 
-
-    void DrawLine(const glm::ivec2& Start, const glm::ivec2& End, int Width, const glm::vec3& Color);
-    
-    void DrawLine(const glm::ivec2& Start, const glm::ivec2& End, int Width, float Luminance);
+    // Set value of multiple pixels at once.
+    // See SetPixel() for reference.
+    void DrawPixels(const std::vector<glm::ivec2>& Pixels,
+                    float Value);
 
     // Exports the image to the given filename, if allowed.
     // Directories are created, if needed. Pixels values are clamped to sane ranges.

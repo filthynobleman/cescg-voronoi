@@ -11,6 +11,7 @@
 #include <cescg/image.hpp>
 #include <cescg/voronoi.hpp>
 #include <cescg/randgen.hpp>
+#include <cescg/rasterizer.hpp>
 
 #include <iostream>
 
@@ -29,29 +30,30 @@ int main(int argc, const char* const argv[])
 
     cescg::Image Img(ImgFile);
 
-    std::vector<glm::ivec2> Samples;
+    std::vector<glm::vec2> Samples;
     Samples.reserve(NumSamples);
     for (int s = 0; s < NumSamples; ++s)
         Samples.emplace_back(cescg::RandGen::GetInstance().RandomInteger(0, Img.GetWidth()),
                              cescg::RandGen::GetInstance().RandomInteger(0, Img.GetHeight()));
 
-    std::vector<std::vector<glm::vec2>> VPolys = cescg::VoronoiPartitioning(Samples, glm::ivec2(0, 0), glm::ivec2(Img.GetWidth() - 1, Img.GetHeight() - 1));
+    cescg::VoronoiDiagram VD(cescg::BoundingBox(glm::vec2(0.0f, 0.0f), glm::vec2(Img.GetWidth() - 1, Img.GetHeight() - 1)));
+    VD.AddSamples(Samples);
+    VD.Compute();
     std::cout << "Voronoi computed" << std::endl;
     int MinGon = std::numeric_limits<int>::max();
     int MaxGon = 0;
-    for (const auto& p : VPolys)
+    for (const auto& r : VD.GetRegions())
     {
-        MinGon = std::min(MinGon, (int)p.size());
-        MaxGon = std::max(MaxGon, (int)p.size());
-        // for (const auto& v : p)
-        //     std::cout << '(' << v.x << ", " << v.y << ") ";
-        // std::cout << std::endl;
+        MinGon = std::min(MinGon, (int)r.GetPolygon().NumVertices());
+        MaxGon = std::max(MaxGon, (int)r.GetPolygon().NumVertices());
     }
     std::cout << MinGon << " to " << MaxGon << std::endl;
+
+    cescg::Rasterizer R(Img.GetWidth(), Img.GetHeight());
     std::vector<std::vector<glm::ivec2>> Pixels;
     Pixels.resize(Samples.size());
     for (int s = 0; s < Samples.size(); ++s)
-        Pixels[s] = cescg::PixelsFromConvexPolygon(VPolys[s]);
+        R.PixelsFromConvexPolygon(VD.GetRegion(s).GetPolygon(), Pixels[s]);
 
     // cescg::Grid<int> VPart = cescg::VoronoiPartitioning(Img, Samples);
 
@@ -69,18 +71,19 @@ int main(int argc, const char* const argv[])
     cescg::Image VoroImg(Img.GetWidth(), Img.GetHeight(), 3);
     for (int s = 0; s < Samples.size(); ++s)
     {
-        for (const auto& p : Pixels[s])
-            VoroImg.SetPixel(p.x, p.y, Colors[s]);
+        VoroImg.DrawPixels(Pixels[s], Colors[s]);
     }
 
+    std::vector<glm::ivec2> LinePixels;
     for (int s = 0; s < Samples.size(); ++s)
     {
-        for (int k = 0; k < VPolys[s].size(); ++k)
+        for (int k = 0; k < VD.GetRegion(s).GetPolygon().NumVertices(); ++k)
         {
-            int kk = (k + 1) % VPolys[s].size();
-            glm::ivec2 Start = VPolys[s][k];
-            glm::ivec2 End = VPolys[s][kk];
-            VoroImg.DrawLine(Start, End, 1, 1.0f);
+            int kk = (k + 1) % VD.GetRegion(s).GetPolygon().NumVertices();
+            glm::vec2 Start = VD.GetRegion(s).GetPolygon().GetVertex(k);
+            glm::vec2 End = VD.GetRegion(s).GetPolygon().GetVertex(kk);
+            R.PixelsFromSegment(Start, End, 1, LinePixels);
+            VoroImg.DrawPixels(LinePixels, glm::vec3(1.0f));
         }
     }
 

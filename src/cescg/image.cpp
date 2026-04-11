@@ -234,72 +234,18 @@ cescg::Image cescg::Image::ToGrayscale() const
     return Img;
 }
 
-void cescg::Image::DrawDot(int i, int j, int Radius, float Luminance)
+void cescg::Image::DrawPixels(const std::vector<glm::ivec2> &Pixels, 
+                              const glm::vec3 &Color)
 {
-    DrawDot(i, j, Radius, glm::vec3(Luminance));
+    for (const auto& p : Pixels)
+        SetPixel(p.x, p.y, Color);
 }
 
-void cescg::Image::DrawDot(int i, int j, int Radius, const glm::vec3 &Color)
+void cescg::Image::DrawPixels(const std::vector<glm::ivec2> &Pixels, 
+                              float Value)
 {
-    double r_sqr = (Radius + 0.5) * (Radius + 0.5);
-    for (int dj = - Radius; dj <= Radius; ++dj)
-    {
-        int jj = j + dj;
-        if (jj < 0 || jj >= GetHeight())
-            continue;
-        for (int di = -Radius; di <= Radius; ++di)
-        {
-            int ii = i + di;
-            if (ii < 0 || ii >= GetWidth())
-                continue;
-            
-            double d_sqr = di * di + dj * dj;
-            if (d_sqr > r_sqr)
-                continue;
-
-            SetPixel(ii, jj, Color);
-        }
-    }
-}
-
-void cescg::Image::DrawLine(const glm::ivec2 &Start, const glm::ivec2 &End, int Width, const glm::vec3 &Color)
-{
-    glm::ivec2 Diff = End - Start;
-    // if (Diff.x == 0)
-    // {
-    //     for (int y = std::min(Start.y, End.y); y <= std::max(Start.y, End.y); ++y)
-    //     {
-    //         for (int x = Start.x - Width / 2; x <= Start.x + Width / 2; ++x)
-    //             SetPixel(x, y, Color);
-    //     }
-    // }
-    float XDiff = Diff.x;
-    float YDiff = Diff.y;
-    if (std::abs(XDiff) > std::abs(YDiff))
-    {
-        float Slope = YDiff / XDiff;
-        for (int x = std::min(Start.x, End.x); x <= std::max(Start.x, End.x); ++x)
-        {
-            int y = Start.y + ((x - Start.x) * Slope);
-            for (int yy = y - Width / 2; yy <= y + Width / 2; ++yy)
-                SetPixel(x, yy, Color);
-        }
-    }
-    else
-    {
-        float Slope = XDiff / YDiff;
-        for (int y = std::min(Start.y, End.y); y <= std::max(Start.y, End.y); ++y)
-        {
-            int x = Start.x + ((y - Start.y) * Slope);
-            for (int xx = x - Width / 2; xx <= x + Width / 2; ++xx)
-                SetPixel(xx, y, Color);
-        }
-    }
-}
-
-void cescg::Image::DrawLine(const glm::ivec2 &Start, const glm::ivec2 &End, int Width, float Luminance)
-{
-    DrawLine(Start, End, Width, glm::vec3(Luminance));
+    for (const auto& p : Pixels)
+        SetLuminance(p.x, p.y, Value);
 }
 
 bool cescg::Image::Export(const std::string &Filename) const
