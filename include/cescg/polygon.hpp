@@ -36,6 +36,8 @@ public:
 
     glm::vec2 GetBarycenter() const;
     glm::vec2 GetCentroid() const;
+    std::pair<glm::vec2, glm::vec2> GetEdge(int i) const;
+    std::vector<std::pair<glm::vec2, glm::vec2>> GetEdges() const;
 };
 
 } // namespace cescg

@@ -12,11 +12,11 @@
 
 #include <iostream>
 
-#define OUT_DIR "./test-image-output/"
+#define OUT_DIR CESCG_OUTPUT_DIR "/test-image/"
 
 int main(int argc, const char* const argv[])
 {
-    std::string ImgFile = SAMPLES_DIR "/plant-1920x1080.jpg";
+    std::string ImgFile = CESCG_SAMPLES_DIR "/plant-1920x1080.jpg";
     if (argc > 1)
         ImgFile = argv[1];
 

@@ -227,3 +227,13 @@ void cescg::Rasterizer::PixelsFromSegment(const glm::vec2 &a,
         }
     }
 }
+
+glm::ivec2 cescg::Rasterizer::PixelAtCoordinates(const glm::vec2 &p) const
+{
+    glm::ivec2 Result(glm::round(p.x), glm::round(p.y));
+    Result.x = glm::clamp(Result.x, 0, m_Width - 1);
+    Result.y = glm::clamp(Result.y, 0, m_Height - 1);
+}
+
+int cescg::Rasterizer::GetCanvasWidth() const { return m_Width; }
+int cescg::Rasterizer::GetCanvasHeight() const { return m_Height; }

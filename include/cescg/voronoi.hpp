@@ -75,8 +75,8 @@ public:
     const glm::vec2& GetSample(int i) const;
     const std::vector<glm::vec2>& GetSamples() const;
 
-    cescg::VoronoiRegion GetRegion(int i) const;
-    std::vector<cescg::VoronoiRegion> GetRegions() const;
+    const cescg::VoronoiRegion& GetRegion(int i) const;
+    const std::vector<cescg::VoronoiRegion>& GetRegions() const;
 };
 
 } // namespace cescg

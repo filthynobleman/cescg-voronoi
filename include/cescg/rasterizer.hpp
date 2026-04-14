@@ -47,6 +47,9 @@ public:
     cescg::Rasterizer& operator=(cescg::Rasterizer&& R);
     ~Rasterizer();
 
+    int GetCanvasWidth() const;
+    int GetCanvasHeight() const;
+
     void PixelsFromConvexPolygon(const std::vector<glm::vec2> &Poly,
                                  std::vector<glm::ivec2>& Pixels) const;
     void PixelsFromConvexPolygon(const cescg::Polygon &Poly,
@@ -60,6 +63,8 @@ public:
                            const glm::vec2& b,
                            float Width,
                            std::vector<glm::ivec2>& Pixels) const;
+
+    glm::ivec2 PixelAtCoordinates(const glm::vec2& p) const;
 };
 
 } // namespace cescg

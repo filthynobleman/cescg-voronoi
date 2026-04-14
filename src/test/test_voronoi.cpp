@@ -15,12 +15,10 @@
 
 #include <iostream>
 
-#define OUT_DIR "./test-voronoi-output/"
-
 
 int main(int argc, const char* const argv[])
 {
-    std::string ImgFile = SAMPLES_DIR "/camera-1920x1080.jpg";
+    std::string ImgFile = CESCG_SAMPLES_DIR "/camera-1920x1080.jpg";
     if (argc > 1)
         ImgFile = argv[1];
 
@@ -89,7 +87,7 @@ int main(int argc, const char* const argv[])
 
     std::cout << "Image colored" << std::endl;
 
-    VoroImg.Export(OUT_DIR "/voronoi.jpg");
+    VoroImg.Export(CESCG_OUTPUT_DIR "/voronoi.jpg");
 
 
     return EXIT_SUCCESS;

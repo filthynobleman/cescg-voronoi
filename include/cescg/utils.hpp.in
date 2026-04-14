@@ -15,7 +15,11 @@
 
 // Sample data directory.
 // TODO: change to CMake configurable before release
-#define SAMPLES_DIR "../samples/"
+// #define SAMPLES_DIR "../samples/"
+#cmakedefine CESCG_SAMPLES_DIR "@CESCG_SAMPLES_DIR@"
+
+// Output directory
+#cmakedefine CESCG_OUTPUT_DIR "@CESCG_OUTPUT_DIR@"
 
 
 // Basic inclusions always useful

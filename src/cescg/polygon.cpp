@@ -78,3 +78,17 @@ glm::vec2 cescg::Polygon::GetCentroid() const
     }
     return C / (3.0f * GetArea());
 }
+
+std::pair<glm::vec2, glm::vec2> cescg::Polygon::GetEdge(int i) const
+{
+    return { GetVertex(i), GetVertex((i + 1) % NumVertices()) };
+}
+
+std::vector<std::pair<glm::vec2, glm::vec2>> cescg::Polygon::GetEdges() const
+{
+    std::vector<std::pair<glm::vec2, glm::vec2>> Edges;
+    Edges.reserve(NumVertices());
+    for (int i = 0; i < NumVertices(); ++i)
+        Edges.emplace_back(GetEdge(i));
+    return Edges;
+}

@@ -21,8 +21,24 @@ find_package(OpenMP)
 
 
 
+# Define project's environment variables
+set(CESCG_SAMPLES_DIR "${CMAKE_SOURCE_DIR}/samples")
+set(CESCG_OUTPUT_DIR "${CMAKE_BINARY_DIR}/output")
+
+# Configure all project headers (moves them into the build directory)
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/bbox.hpp" "${CMAKE_BINARY_DIR}/include/cescg/bbox.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/grid.hpp" "${CMAKE_BINARY_DIR}/include/cescg/grid.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/halfplane.hpp" "${CMAKE_BINARY_DIR}/include/cescg/halfplane.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/image.hpp" "${CMAKE_BINARY_DIR}/include/cescg/image.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/polygon.hpp" "${CMAKE_BINARY_DIR}/include/cescg/polygon.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/randgen.hpp" "${CMAKE_BINARY_DIR}/include/cescg/randgen.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/rasterizer.hpp" "${CMAKE_BINARY_DIR}/include/cescg/rasterizer.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/utils.hpp.in" "${CMAKE_BINARY_DIR}/include/cescg/utils.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/voronoi.hpp" "${CMAKE_BINARY_DIR}/include/cescg/voronoi.hpp")
+configure_file("${CMAKE_SOURCE_DIR}/include/cescg/vororegion.hpp" "${CMAKE_BINARY_DIR}/include/cescg/vororegion.hpp")
+
 # Include project headers
-include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${CMAKE_BINARY_DIR}/include")
 
 # Compile project library
 add_library(CESCG STATIC    "${CMAKE_SOURCE_DIR}/src/cescg/image.cpp"
