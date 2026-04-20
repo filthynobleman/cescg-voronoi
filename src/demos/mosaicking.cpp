@@ -79,8 +79,7 @@ int main(int argc, const char* const argv[])
         // Get color of site
         glm::ivec2 si = Raster.PixelAtCoordinates(Sites[s]);
         glm::vec3 Color = Img.GetPixel(glm::round(Sites[s].x), glm::round(Sites[s].y));
-        for (const auto& p : Pixels)
-            ImgOut.SetPixel(p.x, p.y, Color);
+        ImgOut.DrawPixels(Pixels, Color);
     }
 
     // If asked, draw edges
@@ -94,8 +93,7 @@ int main(int argc, const char* const argv[])
             {
                 std::vector<glm::ivec2> Pixels;
                 Raster.PixelsFromSegment(e.first, e.second, 1, Pixels);
-                for (const auto& p : Pixels)
-                    ImgOut.SetPixel(p.x, p.y, glm::vec3(1.0f));
+                ImgOut.DrawPixels(Pixels, glm::vec3(1.0f));
             }
         }
     }
