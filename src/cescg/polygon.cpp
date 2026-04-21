@@ -51,12 +51,12 @@ float cescg::Polygon::GetArea() const
         int ii = i + 1;
         if (ii >= NumVertices())
             ii = 0;
-        Area += (m_Verts[i].y + m_Verts[ii].y) * (m_Verts[i].x - m_Verts[ii].x);
+        Area += (m_Verts[i].x * m_Verts[ii].y - m_Verts[ii].x * m_Verts[i].y);
     }
     return 0.5f * Area;
 }
 
-glm::vec2 cescg::Polygon::GetBarycenter() const
+glm::vec2 cescg::Polygon::GetCentroid() const
 {
     glm::vec2 B(0.0f);
     for (int i = 0; i < NumVertices(); ++i)
@@ -64,7 +64,7 @@ glm::vec2 cescg::Polygon::GetBarycenter() const
     return B / (float)NumVertices();
 }
 
-glm::vec2 cescg::Polygon::GetCentroid() const
+glm::vec2 cescg::Polygon::GetCenterOfMass() const
 {
     glm::vec2 C(0.0f);
     for (int i = 0; i < NumVertices(); ++i)
@@ -76,7 +76,7 @@ glm::vec2 cescg::Polygon::GetCentroid() const
         C.x += (m_Verts[i].x + m_Verts[ii].x) * Cross;
         C.y += (m_Verts[i].y + m_Verts[ii].y) * Cross;
     }
-    return C / (3.0f * GetArea());
+    return C / (6.0f * GetArea());
 }
 
 std::pair<glm::vec2, glm::vec2> cescg::Polygon::GetEdge(int i) const

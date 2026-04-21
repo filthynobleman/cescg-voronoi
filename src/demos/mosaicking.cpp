@@ -98,6 +98,9 @@ int main(int argc, const char* const argv[])
         }
     }
 
+    // Export image
+    ImgOut.Export(CLIArgs.OutFile);
+
 
 
     return EXIT_SUCCESS;
@@ -106,5 +109,47 @@ int main(int argc, const char* const argv[])
 
 void ParseArgs(int argc, const char *const argv[])
 {
-    // TODO
+    CLIArgs.InFile = CESCG_SAMPLES_DIR "/beach-1920x1080.jpg";
+    CLIArgs.OutFile = CESCG_OUTPUT_DIR "/mosaicking.jpg";
+    CLIArgs.NumSites = 5000;
+    CLIArgs.Centroidal = false;
+    CLIArgs.DrawEdges = false;
+
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string argvi = argv[i];
+        if (argvi[0] != '-')
+        {
+            CLIArgs.InFile = argvi;
+            continue;
+        }
+
+        if (argvi == "-e" || argvi == "--draw-edges")
+        {
+            CLIArgs.DrawEdges = true;
+            continue;
+        }
+        if (argvi == "-c" || argvi == "--centroidal")
+        {
+            CLIArgs.Centroidal = true;
+            continue;
+        }
+
+        if (i >= argc - 1)
+        {
+            std::cerr << "Option " << argvi << " requires an argument." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        if (argvi == "-n" || argvi == "--num-sites")
+        {
+            CLIArgs.NumSites = std::stoi(argv[++i]);
+            continue;
+        }
+        if (argvi == "-o" || argvi == "--output")
+        {
+            CLIArgs.OutFile = argv[++i];
+            continue;
+        }
+    }
 }

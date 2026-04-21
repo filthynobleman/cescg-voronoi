@@ -55,22 +55,39 @@ if (OpenMP_FOUND)
 endif()
 
 
-# Compile test applications
-add_executable(TestImage "${CMAKE_SOURCE_DIR}/src/test/test_image.cpp")
-set_target_properties(TestImage PROPERTIES CXX_STANDARD 17)
+# Compile demos
+add_executable(Mosaicking "${CMAKE_SOURCE_DIR}/src/demos/mosaicking.cpp")
+set_target_properties(Mosaicking PROPERTIES CXX_STANDARD 17)
 if (OpenMP_FOUND)
-    target_link_libraries(TestImage CESCG OpenMP::OpenMP_CXX)
+    target_link_libraries(Mosaicking CESCG OpenMP::OpenMP_CXX)
 else()
-    target_link_libraries(TestImage CESCG)
+    target_link_libraries(Mosaicking CESCG)
 endif()
 
-add_executable(TestVoronoi "${CMAKE_SOURCE_DIR}/src/test/test_voronoi.cpp")
-set_target_properties(TestVoronoi PROPERTIES CXX_STANDARD 17)
+add_executable(FrontPropagation "${CMAKE_SOURCE_DIR}/src/demos/frontprop.cpp")
+set_target_properties(FrontPropagation PROPERTIES CXX_STANDARD 17)
 if (OpenMP_FOUND)
-    target_link_libraries(TestVoronoi CESCG OpenMP::OpenMP_CXX)
+    target_link_libraries(FrontPropagation CESCG OpenMP::OpenMP_CXX)
 else()
-    target_link_libraries(TestVoronoi CESCG)
+    target_link_libraries(FrontPropagation CESCG)
 endif()
+
+# Compile test applications
+# add_executable(TestImage "${CMAKE_SOURCE_DIR}/src/test/test_image.cpp")
+# set_target_properties(TestImage PROPERTIES CXX_STANDARD 17)
+# if (OpenMP_FOUND)
+#     target_link_libraries(TestImage CESCG OpenMP::OpenMP_CXX)
+# else()
+#     target_link_libraries(TestImage CESCG)
+# endif()
+
+# add_executable(TestVoronoi "${CMAKE_SOURCE_DIR}/src/test/test_voronoi.cpp")
+# set_target_properties(TestVoronoi PROPERTIES CXX_STANDARD 17)
+# if (OpenMP_FOUND)
+#     target_link_libraries(TestVoronoi CESCG OpenMP::OpenMP_CXX)
+# else()
+#     target_link_libraries(TestVoronoi CESCG)
+# endif()
 
 # add_executable(TestVoronoiCentroidal "${CMAKE_SOURCE_DIR}/src/test/test_voronoi_centroidal.cpp")
 # set_target_properties(TestVoronoiCentroidal PROPERTIES CXX_STANDARD 17)

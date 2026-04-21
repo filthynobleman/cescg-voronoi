@@ -10,6 +10,8 @@
 #include <cescg/voronoi.hpp>
 #include <cescg/halfplane.hpp>
 
+#include <queue>
+
 
 cescg::VoronoiDiagram::VoronoiDiagram(const cescg::BoundingBox &BB)
 {
@@ -73,8 +75,8 @@ bool cescg::VoronoiDiagram::IsUpToDate() const { return m_UpToDate; }
 int cescg::VoronoiDiagram::NumSamples() const { return m_Samples.size(); }
 const glm::vec2 &cescg::VoronoiDiagram::GetSample(int i) const { return m_Samples[i]; }
 const std::vector<glm::vec2> &cescg::VoronoiDiagram::GetSamples() const { return m_Samples; }
-cescg::VoronoiRegion cescg::VoronoiDiagram::GetRegion(int i) const { return m_Regions[i]; }
-std::vector<cescg::VoronoiRegion> cescg::VoronoiDiagram::GetRegions() const { return m_Regions; }
+const cescg::VoronoiRegion& cescg::VoronoiDiagram::GetRegion(int i) const { return m_Regions[i]; }
+const std::vector<cescg::VoronoiRegion>& cescg::VoronoiDiagram::GetRegions() const { return m_Regions; }
 
 bool AngleCompare(const glm::vec2& a, const glm::vec2& b)
 {
@@ -125,7 +127,7 @@ void cescg::VoronoiDiagram::MakeCentroidal(int MaxIter)
         float Delta = 0.0f;
         for (int i = 0; i < NumSamples(); ++i)
         {
-            glm::vec2 NewSite = m_Regions[i].GetPolygon().GetCentroid();
+            glm::vec2 NewSite = m_Regions[i].GetPolygon().GetCenterOfMass();
             Delta += glm::distance(m_Samples[i], NewSite);
             m_Samples[i] = NewSite;
         }
@@ -136,4 +138,70 @@ void cescg::VoronoiDiagram::MakeCentroidal(int MaxIter)
         if (Delta <= 1e-3f)
             break;
     }
+}
+
+
+struct FrontPropGreater
+{
+    bool operator()(const std::pair<double, glm::ivec2>& a,
+                    const std::pair<double, glm::ivec2>& b) const
+    {
+        if (a.first != b.first)
+            return a.first > b.first;
+        if (a.second.x != b.second.x)
+            return a.second.x > b.second.x;
+        return a.second.y > b.second.y;
+    }
+};
+
+cescg::Grid<int> cescg::FrontPropagation(const cescg::Image &Img, 
+                                         const std::vector<glm::ivec2> &Sites, 
+                                         CellDistance DistFun)
+{
+    cescg::Grid<int> VPart(Img.GetWidth(), Img.GetHeight(), -1);
+    cescg::Grid<double> Dists(Img.GetWidth(), Img.GetHeight(), std::numeric_limits<double>::infinity());
+
+    // For each site, isotropic expansion
+    for (int s = 0; s < Sites.size(); ++s)
+    {
+        std::priority_queue<std::pair<double, glm::ivec2>,
+                            std::vector<std::pair<double, glm::ivec2>>,
+                            FrontPropGreater> Q;
+
+        VPart(Sites[s].x, Sites[s].y) = s;
+        Q.emplace(0.0, Sites[s]);
+        while (!Q.empty())
+        {
+            double w;
+            glm::ivec2 p;
+            std::tie(w, p) = Q.top();
+            Q.pop();
+
+            if (w >= Dists(p.x, p.y))
+                continue;
+            
+            Dists(p.x, p.y) = w;
+            VPart(p.x, p.y) = s;
+
+            glm::ivec2 a;
+            for (int dy = -1; dy <= 1; ++dy)
+            {
+                a.y = p.y + dy;
+                if (a.y < 0 || a.y >= Img.GetHeight())
+                    continue;
+                for (int dx = -1; dx <= 1; ++dx)
+                {
+                    if (dy == 0 && dx == 0)
+                        continue;
+                    a.x = p.x + dx;
+                    if (a.x < 0  || a.x >= Img.GetWidth())
+                        continue;
+                    
+                    Q.emplace(DistFun(Img, p, a) + w, a);
+                }
+            }
+        }
+    }
+
+    return VPart;
 }
