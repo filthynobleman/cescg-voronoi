@@ -35,6 +35,16 @@ public:
     float RandomReal(float MinInclusive, float MaxInclusive);
     // Generate a float in range [0, 1]
     float RandomReal();
+    // Hash a value into a seemengly random integer
+    unsigned int HashInt(unsigned int Value) const;
+    // Hash a value into a seemengly random float
+    float HashFloat(unsigned int Value) const;
+    // Hash a value into a seemengly random color
+    glm::vec3 HashColor(unsigned int Value);
+    // Hash a vector into a seemengly random integer
+    unsigned int HashInt(const glm::ivec2& Value) const;
+    // Hash a vector into a seemengly random float
+    float HashFloat(const glm::ivec2& Value) const;
 };
 
 } // namespace cescg

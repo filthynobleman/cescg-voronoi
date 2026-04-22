@@ -72,6 +72,22 @@ else()
     target_link_libraries(FrontPropagation CESCG)
 endif()
 
+add_executable(Stippling "${CMAKE_SOURCE_DIR}/src/demos/stippling.cpp")
+set_target_properties(Stippling PROPERTIES CXX_STANDARD 17)
+if (OpenMP_FOUND)
+    target_link_libraries(Stippling CESCG OpenMP::OpenMP_CXX)
+else()
+    target_link_libraries(Stippling CESCG)
+endif()
+
+add_executable(Texture "${CMAKE_SOURCE_DIR}/src/demos/texture.cpp")
+set_target_properties(Texture PROPERTIES CXX_STANDARD 17)
+if (OpenMP_FOUND)
+    target_link_libraries(Texture CESCG OpenMP::OpenMP_CXX)
+else()
+    target_link_libraries(Texture CESCG)
+endif()
+
 # Compile test applications
 # add_executable(TestImage "${CMAKE_SOURCE_DIR}/src/test/test_image.cpp")
 # set_target_properties(TestImage PROPERTIES CXX_STANDARD 17)

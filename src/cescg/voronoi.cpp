@@ -9,6 +9,7 @@
  */
 #include <cescg/voronoi.hpp>
 #include <cescg/halfplane.hpp>
+#include <cescg/randgen.hpp>
 
 #include <queue>
 
@@ -103,7 +104,8 @@ void cescg::VoronoiDiagram::Compute()
                 continue;
 
             cescg::HalfPlane Hij = cescg::PerpendicularBisector(m_Samples[i], m_Samples[j]);
-            m_Regions[i].SetPolygon(cescg::CutPolygon(Hij, m_Regions[i].GetPolygon()));
+            // m_Regions[i].SetPolygon(cescg::CutPolygon(Hij, m_Regions[i].GetPolygon()));
+            cescg::CutPolygonInPlace(Hij, m_Regions[i].GetPolygon());
 
             // Handle degenerate cases
             if (m_Regions[i].GetPolygon().NumVertices() == 0)
@@ -198,6 +200,53 @@ cescg::Grid<int> cescg::FrontPropagation(const cescg::Image &Img,
                         continue;
                     
                     Q.emplace(DistFun(Img, p, a) + w, a);
+                }
+            }
+        }
+    }
+
+    return VPart;
+}
+
+cescg::Grid<int> cescg::VoronoiTexture(int Width, 
+                                       int Height, 
+                                       float Scale, 
+                                       float Randomness)
+{
+    cescg::Grid<int> VPart(Width, Height, -1);
+
+    #pragma omp parallel for
+    for (int j = 0; j < Height; ++j)
+    {
+        for (int i = 0; i < Width; ++i)
+        {
+            // Normalize coordinates to shortest dimension of the grid
+            glm::vec2 p(i, j);
+            p /= std::min(Width, Height);
+            // Scale according to input parameter
+            p *= Scale;
+            
+            // Get coordinates of enclosing cell
+            glm::ivec2 Cell = glm::floor(p);
+
+            // Search 3x3 neighborhood for closest sample
+            double MinDist = std::numeric_limits<double>::infinity();
+            for (int dy = -1; dy <= 1; ++dy)
+            {
+                for (int dx = -1; dx <= 1; ++dx)
+                {
+                    glm::ivec2 CurCell = Cell + glm::ivec2(dx, dy);
+                    // Position is the middle of the cell plus a (scaled) random offset
+                    glm::vec2 Site(CurCell.x + 0.5f, CurCell.y + 0.5f);
+                    glm::vec2 Offset(cescg::RandGen::GetInstance().HashFloat(CurCell),
+                                     cescg::RandGen::GetInstance().HashFloat(CurCell));
+                    Site += Randomness * (0.5f * Offset - 0.5f);
+                    double d = glm::distance(p, Site);
+                    if (d < MinDist)
+                    {
+                        MinDist = d;
+                        VPart(i, j) = cescg::RandGen::GetInstance().HashInt(CurCell);
+                    }
                 }
             }
         }

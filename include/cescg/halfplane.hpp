@@ -50,4 +50,7 @@ cescg::HalfPlane PerpendicularBisector(const glm::vec2& Inside,
 cescg::Polygon CutPolygon(const cescg::HalfPlane& H,
                           const cescg::Polygon& P);
 
+void CutPolygonInPlace(const cescg::HalfPlane& H,
+                       cescg::Polygon& P);
+
 } // namespace cescg

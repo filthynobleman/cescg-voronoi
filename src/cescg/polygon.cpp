@@ -41,7 +41,9 @@ cescg::Polygon::~Polygon() { }
 
 int cescg::Polygon::NumVertices() const { return m_Verts.size(); }
 const glm::vec2 &cescg::Polygon::GetVertex(int i) const { return m_Verts[i]; }
+void cescg::Polygon::SetVertex(int i, const glm::vec2 &v) { m_Verts[i] = v; }
 const std::vector<glm::vec2> &cescg::Polygon::GetVertices() const { return m_Verts; }
+void cescg::Polygon::SetVertices(const std::vector<glm::vec2> &NewVerts) { m_Verts = NewVerts; }
 
 float cescg::Polygon::GetArea() const
 {

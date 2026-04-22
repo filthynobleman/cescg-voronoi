@@ -49,5 +49,6 @@ cescg::VoronoiRegion::~VoronoiRegion() { }
 const glm::vec2 &cescg::VoronoiRegion::GetSite() const { return m_Site; }
 void cescg::VoronoiRegion::SetSite(const glm::vec2 &Site) { m_Site = Site; }
 const cescg::Polygon &cescg::VoronoiRegion::GetPolygon() const { return m_Polygon; }
+cescg::Polygon &cescg::VoronoiRegion::GetPolygon() { return m_Polygon; }
 void cescg::VoronoiRegion::SetPolygon(const cescg::Polygon &Poly) { m_Polygon = Poly; }
 void cescg::VoronoiRegion::SetPolygon(const std::vector<glm::vec2> &Poly) { m_Polygon = cescg::Polygon(Poly); }

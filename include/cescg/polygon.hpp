@@ -31,6 +31,8 @@ public:
     int NumVertices() const;
     const glm::vec2& GetVertex(int i) const;
     const std::vector<glm::vec2>& GetVertices() const;
+    void SetVertex(int i, const glm::vec2& v);
+    void SetVertices(const std::vector<glm::vec2>& NewVerts);
 
     float GetArea() const;
 

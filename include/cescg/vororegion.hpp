@@ -36,6 +36,7 @@ public:
     const glm::vec2& GetSite() const;
     void SetSite(const glm::vec2& Site);
     const cescg::Polygon& GetPolygon() const;
+    cescg::Polygon& GetPolygon();
     void SetPolygon(const cescg::Polygon& Poly);
     void SetPolygon(const std::vector<glm::vec2>& Poly);
 };
