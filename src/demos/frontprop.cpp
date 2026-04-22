@@ -22,23 +22,27 @@ struct {
 
     // Number of sites for Voronoi diagram
     int NumSites;
-    // Whether or not the diagram must be centroidal
-    bool Centroidal;
-
-    // Whether or not to draw edges between Voronoi cells
-    bool DrawEdges;
+    
+    // Linear interpolation factor between Euclidean and color distance
+    double InterpFactor;
 } CLIArgs;
 
 
 
 void ParseArgs(int argc, const char* const argv[]);
+double EuclideanDistance(const cescg::Image& Img,
+                         const glm::ivec2& a,
+                         const glm::ivec2& b);
+double ColorDistance(const cescg::Image& Img,
+                     const glm::ivec2& a,
+                     const glm::ivec2& b);
 
 int main(int argc, const char* const argv[])
 {
     ParseArgs(argc, argv);
 
     // Load the image
-    cescg::Image Img(CESCG_SAMPLES_DIR "/beach-1920x1080.jpg");
+    cescg::Image Img(CLIArgs.InFile);
 
     // Compute random sites
     std::vector<glm::ivec2> Sites;
@@ -51,59 +55,88 @@ int main(int argc, const char* const argv[])
     }
 
     // Front propagate with euclidean/color distance
-    auto distlambda = [] (const cescg::Image& Img, const glm::ivec2& a, const glm::ivec2& b) { 
-        glm::ivec2 diff = a - b;
-        return std::sqrt(diff.x * diff.x + diff.y * diff.y);
+    double t = CLIArgs.InterpFactor;
+    auto mixlambda = [t] (const cescg::Image& Img, const glm::ivec2& a, const glm::ivec2& b) { 
+        return (1.0 - t) * EuclideanDistance(Img, a, b) + t * ColorDistance(Img, a, b);
     };
-    auto colorlambda = [] (const cescg::Image& Img, const glm::ivec2& a, const glm::ivec2& b) { 
-        glm::vec3 c1 = Img.GetPixel(a.x, a.y);
-        glm::vec3 c2 = Img.GetPixel(b.x, b.y);
-        double d = glm::distance(c1, c2);
-        return d;
-    };
+    cescg::Grid<int> VPart = cescg::FrontPropagation(Img, Sites, mixlambda);
 
-    for (int i = 0; i < 120; ++i)
+    // Creat eoutput image and export
+    cescg::Image ImgOut(Img.GetWidth(), Img.GetHeight(), Img.GetChannels());
+    for (int j = 0; j < Img.GetHeight(); ++j)
     {
-        double t = i / 119.0;
-        t = std::pow(std::log1p(t) / std::log1p(1), 0.25);
-        auto mixlambda = [t,distlambda,colorlambda] (const cescg::Image& Img, const glm::ivec2& a, const glm::ivec2& b) { 
-            return (1.0 - t) * distlambda(Img, a, b) + t * colorlambda(Img, a, b);
-        };
-        cescg::Grid<int> VPart = cescg::FrontPropagation(Img, Sites, mixlambda);
-
-        // Creat eoutput image and export
-        cescg::Image ImgOut(Img.GetWidth(), Img.GetHeight(), Img.GetChannels());
-        for (int j = 0; j < Img.GetHeight(); ++j)
+        for (int i = 0; i < Img.GetWidth(); ++i)
         {
-            for (int i = 0; i < Img.GetWidth(); ++i)
-            {
-                glm::ivec2 s = Sites[VPart(i, j)];
-                ImgOut.SetPixel(i, j, Img.GetPixel(s.x, s.y));
-            }
+            glm::ivec2 s = Sites[VPart(i, j)];
+            ImgOut.SetPixel(i, j, Img.GetPixel(s.x, s.y));
         }
-        std::string OutFile = CESCG_OUTPUT_DIR;
-        OutFile += "/frontprop-";
-        if (i < 10)
-            OutFile += '0';
-        if (i < 100)
-            OutFile += '0';
-        OutFile += std::to_string(i) + ".jpg";
-        ImgOut.Export(OutFile);
-
-        std::cout << (i + 1) << '/' << 120 << std::endl;
     }
-    
-
+    ImgOut.Export(CLIArgs.OutFile);
 
 
     return EXIT_SUCCESS;
 }
 
+double EuclideanDistance(const cescg::Image &Img, 
+                         const glm::ivec2 &a, 
+                         const glm::ivec2 &b)
+{
+    glm::vec2 Diff = glm::vec2(a - b);
+    return glm::length(Diff);
+}
+
+double ColorDistance(const cescg::Image &Img, 
+                     const glm::ivec2 &a, 
+                     const glm::ivec2 &b)
+{
+    glm::vec3 ca = Img.GetPixel(a.x, a.y);
+    glm::vec3 cb = Img.GetPixel(b.x, b.y);
+    return glm::distance(ca, cb);
+}
+
 void ParseArgs(int argc, const char *const argv[])
 {
     CLIArgs.InFile = CESCG_SAMPLES_DIR "/beach-1920x1080.jpg";
-    CLIArgs.OutFile = CESCG_OUTPUT_DIR "/mosaicking.jpg";
+    CLIArgs.OutFile = CESCG_OUTPUT_DIR "/frontprop.jpg";
     CLIArgs.NumSites = 200;
-    CLIArgs.Centroidal = false;
-    CLIArgs.DrawEdges = false;
+    CLIArgs.InterpFactor = 0.0;
+
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string argvi = argv[i];
+        if (argvi[0] != '-')
+        {
+            CLIArgs.InFile = argvi;
+            continue;
+        }
+
+        if (i >= argc - 1)
+        {
+            std::cerr << "Option " << argvi << " requires an argument." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        if (argvi == "-n" || argvi == "--num-sites")
+        {
+            CLIArgs.NumSites = std::stoi(argv[++i]);
+            continue;
+        }
+        if (argvi == "-o" || argvi == "--output")
+        {
+            CLIArgs.OutFile = argv[++i];
+            continue;
+        }
+        if (argvi == "-f" || argvi == "--interp-factor")
+        {
+            CLIArgs.InterpFactor = std::stod(argv[++i]);
+            if (CLIArgs.InterpFactor < 0.0 || CLIArgs.InterpFactor > 1.0)
+            {
+                std::cerr << "WARNING: interpolation factor provided (" << CLIArgs.InterpFactor;
+                std::cerr << ") exceeds bounds [0, 1]." << std::endl;
+                std::cerr << "It will be clamped to the closest bound." << std::endl;
+            }
+            CLIArgs.InterpFactor = glm::clamp(CLIArgs.InterpFactor, 0.0, 1.0);
+            continue;
+        }
+    }
 }
