@@ -25,6 +25,7 @@
 // Basic inclusions always useful
 #include <vector>
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <filesystem>
 #include <algorithm>
