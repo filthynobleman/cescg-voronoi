@@ -122,6 +122,8 @@ void cescg::VoronoiDiagram::Compute()
             // and execute the cut
             cescg::HalfPlane Hij = cescg::PerpendicularBisector(m_Samples[i], m_Samples[j]);
             m_Regions[i].GetPolygon().CutInPlace(Hij);
+
+            // Recompute ball
             CoM = m_Regions[i].GetPolygon().GetCenterOfMass();
             MaxDist = 0.0;
             for (int k = 0; k < m_Regions[i].GetPolygon().NumVertices(); ++k)
