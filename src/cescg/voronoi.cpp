@@ -98,14 +98,37 @@ void cescg::VoronoiDiagram::Compute()
     #pragma omp parallel for
     for (int i = 0; i < NumSamples(); ++i)
     {
+        // Get smaller ball centered at barycenter that contains the polygon
+        float MaxDist = 0.0;
+        glm::vec2 CoM = m_Regions[i].GetPolygon().GetCenterOfMass();
+        for (int k = 0; k < m_Regions[i].GetPolygon().NumVertices(); ++k)
+        {
+            glm::vec2 d = CoM - m_Regions[i].GetPolygon().GetVertex(k);
+            MaxDist = std::max(MaxDist, glm::dot(d, d));
+        }
         for (int j = 0; j < NumSamples(); ++j)
         {
             if (i == j)
                 continue;
 
+            // If distance is larger than twice the ball, polygon is completely
+            // inside the halfplane determined by the perpendicular bisector
+            // D > 2 * MaxDist -> D^2 > 4 * MaxDist^2
+            glm::vec2 Diff = m_Samples[i] - m_Samples[j];
+            if (glm::dot(Diff, Diff) >= 4 * MaxDist)
+                continue;
+
+            // Compute halfplane determined by perpendicular bisector
+            // and execute the cut
             cescg::HalfPlane Hij = cescg::PerpendicularBisector(m_Samples[i], m_Samples[j]);
-            // m_Regions[i].SetPolygon(cescg::CutPolygon(Hij, m_Regions[i].GetPolygon()));
-            cescg::CutPolygonInPlace(Hij, m_Regions[i].GetPolygon());
+            m_Regions[i].GetPolygon().CutInPlace(Hij);
+            CoM = m_Regions[i].GetPolygon().GetCenterOfMass();
+            MaxDist = 0.0;
+            for (int k = 0; k < m_Regions[i].GetPolygon().NumVertices(); ++k)
+            {
+                glm::vec2 d = CoM - m_Regions[i].GetPolygon().GetVertex(k);
+                MaxDist = std::max(MaxDist, glm::dot(d, d));
+            }
 
             // Handle degenerate cases
             if (m_Regions[i].GetPolygon().NumVertices() == 0)

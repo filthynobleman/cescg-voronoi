@@ -10,7 +10,6 @@
 #pragma once
 
 #include <cescg/utils.hpp>
-#include <cescg/polygon.hpp>
 
 
 namespace cescg
@@ -46,11 +45,5 @@ public:
 
 cescg::HalfPlane PerpendicularBisector(const glm::vec2& Inside,
                                        const glm::vec2& Outside);
-
-cescg::Polygon CutPolygon(const cescg::HalfPlane& H,
-                          const cescg::Polygon& P);
-
-void CutPolygonInPlace(const cescg::HalfPlane& H,
-                       cescg::Polygon& P);
 
 } // namespace cescg
