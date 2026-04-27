@@ -224,7 +224,9 @@ cescg::Grid<int> cescg::FrontPropagation(const cescg::Image &Img,
                     if (a.x < 0  || a.x >= Img.GetWidth())
                         continue;
                     
-                    Q.emplace(DistFun(Img, p, a) + w, a);
+                    double NewDist = DistFun(Img, p, a) + w;
+                    if (Dists(a.x, a.y) > NewDist)
+                        Q.emplace(NewDist, a);
                 }
             }
         }
