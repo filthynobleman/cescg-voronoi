@@ -114,7 +114,7 @@ void cescg::VoronoiDiagram::Compute()
             // If distance is larger than twice the ball, polygon is completely
             // inside the halfplane determined by the perpendicular bisector
             // D > 2 * MaxDist -> D^2 > 4 * MaxDist^2
-            glm::vec2 Diff = m_Samples[i] - m_Samples[j];
+            glm::vec2 Diff = CoM - m_Samples[j];
             if (glm::dot(Diff, Diff) >= 4 * MaxDist)
                 continue;
 
